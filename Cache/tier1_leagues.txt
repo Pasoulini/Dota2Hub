@@ -1,0 +1,10 @@
+﻿# Tier 1 Leagues - Dota 2
+# Auto-updated from https://liquipedia.net/dota2/Portal:Tournaments
+# Last updated: 2026-07-09
+#
+
+BLAST/SLAM/9
+Esports_Nations_Cup/2026
+BLAST/SLAM/8
+PGL/Wallachia/9
+Esports_World_Cup/2026

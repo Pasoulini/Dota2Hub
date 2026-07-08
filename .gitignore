@@ -1,0 +1,24 @@
+# Cache files (generated at runtime)
+Cache/matches_page.html
+Cache/portal_tournaments.html
+Cache/tier_cache.json
+Cache/tier_last_update.txt
+Cache/logo_*.png
+Cache/blank.png
+
+# Generated data file
+Data.inc
+
+# Windows thumbs
+Thumbs.db
+Desktop.ini
+
+# Editor files
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
