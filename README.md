@@ -13,7 +13,7 @@ A live Dota 2 Tier 1 scoreboard for [Rainmeter](https://www.rainmeter.net/), dis
 - **Auto-Refresh** - Updates every 5 minutes automatically
 - **Team Logos** - Displays official team logos from Liquipedia
 - **Score Display** - Shows current scores for completed and live matches
-- **Resizable** - Scroll mouse wheel to resize the skin
+- **Scaling** - Supports different monitor resolutions
 - **Dark Theme** - Beautiful dark theme designed for Dota 2 fans
 
 ---
@@ -69,8 +69,6 @@ Then refresh Rainmeter and load the skin.
 
 | Action | Description |
 |--------|-------------|
-| **Scroll Up** | Increase skin size |
-| **Scroll Down** | Decrease skin size |
 | **Right-click** | Open context menu |
 | **Drag** | Move skin around the desktop |
 
@@ -87,15 +85,22 @@ Then refresh Rainmeter and load the skin.
 - Displays the final score (e.g., `2-1`)
 - Sorted by most recent first
 
-### Resizing the Skin
+### Scaling (Resize)
 
-The skin supports dynamic resizing for different screen resolutions:
+The skin supports scaling for different monitor resolutions. Edit `Dota2Hub.ini` and change the `Scale` variable:
 
-1. **Default Size** - Optimized for 1440p (2K) displays
-2. **For 1080p** - Scroll down to reduce size
-3. **For 4K** - Scroll up to increase size
+```ini
+[Variables]
+Scale=1.0    ; Default (2K/1440p)
+```
 
-The scale factor is saved automatically and persists across restarts.
+| Scale | Recommended For |
+|-------|-----------------|
+| 0.75 | 1080p / Full HD |
+| 1.0 | 1440p / 2K (default) |
+| 1.25 | 2160p / 4K |
+
+After changing, refresh the skin in Rainmeter.
 
 ---
 
@@ -119,7 +124,7 @@ Edit `Dota2Hub.ini` to customize appearance:
 
 ```ini
 [Variables]
-Scale=1.0          ; Resize factor (0.5 to 2.0)
+Scale=1.0          ; Scale factor (0.75, 1.0, 1.25)
 FontMain=Segoe UI  ; Main font
 FontBold=Segoe UI Semibold  ; Bold font
 Text=245,247,250,255  ; Text color (RGBA)
