@@ -1,0 +1,32 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Rainmeter files
+*.ini text eol=crlf
+*.inc text eol=crlf
+
+# Scripts
+*.ps1 text eol=crlf
+*.vbs text eol=crlf
+
+# Documentation
+*.md text eol=crlf
+*.txt text eol=crlf
+
+# Config files
+.gitignore text eol=crlf
+.gitattributes text eol=crlf
+LICENSE text eol=crlf
+
+# Binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+
+# JSON files
+*.json text eol=crlf
+
+# HTML files
+*.html text eol=crlf
