@@ -372,6 +372,10 @@ foreach ($matchStart in $matchStarts) {
         $score2 = $scoreMatches[1].Groups[1].Value
     }
     
+    $boPattern = '\(Bo(\d+)\)'
+    $boMatch = [regex]::Match($blockHtml, $boPattern)
+    $bo = if ($boMatch.Success) { "BO$($boMatch.Groups[1].Value)" } else { "BO1" }
+    
     if ($utcTime -lt $now) {
         if ($score1 -ne "" -and $score2 -ne "") {
             $s1 = [int]$score1
@@ -392,10 +396,6 @@ foreach ($matchStart in $matchStarts) {
             $isLive = $true
         }
     }
-    
-    $boPattern = '\(Bo(\d+)\)'
-    $boMatch = [regex]::Match($blockHtml, $boPattern)
-    $bo = if ($boMatch.Success) { "BO$($boMatch.Groups[1].Value)" } else { "BO1" }
     
     $tournamentTitlePattern = 'class="match-info-tournament".*?href="(/dota2/[^"]+)"'
     $tournamentTitleMatch = [regex]::Match($blockHtml, $tournamentTitlePattern, [System.Text.RegularExpressions.RegexOptions]::Singleline)
