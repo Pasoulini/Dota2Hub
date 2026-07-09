@@ -33,7 +33,25 @@ function Update-TierList {
         Write-Output "Updating tier list from Portal:Tournaments..."
         
         $portalFile = Join-Path $CacheDir "portal_tournaments.html"
-        & "C:\Windows\System32\curl.exe" -s -L --compressed -H "Api-User-Agent: Dota2Hub/1.0 (contact: your@email.com)" -o $portalFile "https://liquipedia.net/dota2/Portal:Tournaments"
+        $portalTemp = Join-Path $CacheDir "portal_temp.html"
+        
+        & "C:\Windows\System32\curl.exe" -s -L --compressed -H "Api-User-Agent: Dota2Hub/1.0 (contact: your@email.com)" -o $portalTemp "https://liquipedia.net/dota2/Portal:Tournaments"
+        
+        if (Test-Path $portalTemp) {
+            $tempHtml = Get-Content $portalTemp -Raw
+            if ($tempHtml -match 'id="Upcoming"' -or $tempHtml -match 'id="Ongoing"') {
+                Copy-Item $portalTemp $portalFile -Force
+                Write-Output "Portal download OK"
+            } else {
+                Write-Output "Portal download FAILED - using cache"
+            }
+            Remove-Item $portalTemp -Force -ErrorAction SilentlyContinue
+        }
+        
+        if (-not (Test-Path $portalFile)) {
+            Write-Output "No cached portal file - skipping tier update"
+            return
+        }
         
         $html = Get-Content $portalFile -Raw
         $html = $html -replace '&#95;','_'
@@ -146,7 +164,31 @@ function ShortName($txt) {
 Write-Output "Fetching matches page from Liquipedia..."
 
 $matchesPageFile = Join-Path $CacheDir "matches_page.html"
-& "C:\Windows\System32\curl.exe" -s -L --compressed -H "Api-User-Agent: Dota2Hub/1.0 (contact: your@email.com)" -o $matchesPageFile "https://liquipedia.net/dota2/Liquipedia:Matches"
+$tempFile = Join-Path $CacheDir "matches_temp.html"
+
+$downloadOk = $false
+& "C:\Windows\System32\curl.exe" -s -L --compressed -H "Api-User-Agent: Dota2Hub/1.0 (contact: your@email.com)" -o $tempFile "https://liquipedia.net/dota2/Liquipedia:Matches"
+
+if (Test-Path $tempFile) {
+    $tempContent = [IO.File]::ReadAllText($tempFile)
+    if ($tempContent -match 'class="match-info"') {
+        Copy-Item $tempFile $matchesPageFile -Force
+        $downloadOk = $true
+        Write-Output "Download OK ($([math]::Round($tempContent.Length/1KB))KB)"
+    } else {
+        Write-Output "Download FAILED - no match-info found, using cache"
+    }
+    Remove-Item $tempFile -Force -ErrorAction SilentlyContinue
+}
+
+if (-not $downloadOk) {
+    if (Test-Path $matchesPageFile) {
+        Write-Output "Using cached matches page"
+    } else {
+        Write-Output "No cached file available - cannot continue"
+        return
+    }
+}
 
 $html = [IO.File]::ReadAllText($matchesPageFile)
 
