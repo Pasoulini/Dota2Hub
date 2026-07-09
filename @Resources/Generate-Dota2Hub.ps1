@@ -1,5 +1,6 @@
 param(
-    [switch]$RefreshRainmeter
+    [switch]$RefreshRainmeter,
+    [int]$ThrottleSeconds = 0
 )
 
 $ErrorActionPreference = "SilentlyContinue"
@@ -7,8 +8,17 @@ $ErrorActionPreference = "SilentlyContinue"
 $SkinDir = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 $CacheDir = Join-Path $SkinDir "Cache"
 $DataFile = Join-Path $SkinDir "Data.inc"
+$RunStamp = Join-Path $CacheDir "last-run.txt"
 
 if (-not (Test-Path $CacheDir)) { New-Item -ItemType Directory -Path $CacheDir -Force | Out-Null }
+
+if ($ThrottleSeconds -gt 0 -and (Test-Path $RunStamp)) {
+    $lastRun = (Get-Item $RunStamp).LastWriteTime
+    if (((Get-Date) - $lastRun).TotalSeconds -lt $ThrottleSeconds) {
+        Write-Output "THROTTLED"
+        exit 0
+    }
+}
 
 function Update-TierList {
     param($CacheDir)
@@ -588,6 +598,8 @@ for ($i = 1; $i -le 8; $i++) {
 
 $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
 [IO.File]::WriteAllLines($DataFile, $lines, $utf8NoBom)
+
+(Get-Date) | Set-Content $RunStamp -Force
 
 if ($RefreshRainmeter) {
     Start-Sleep -Milliseconds 500
