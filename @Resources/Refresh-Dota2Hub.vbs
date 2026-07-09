@@ -14,7 +14,7 @@ If WScript.Arguments.Count > 0 Then
     mode = LCase(WScript.Arguments(0))
 End If
 
-args = "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File " & Chr(34) & scriptPath & Chr(34)
+args = "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File " & Chr(34) & scriptPath & Chr(34) & " -RefreshRainmeter"
 If mode = "auto" Then
     args = args & " -ThrottleSeconds 295"
 End If
