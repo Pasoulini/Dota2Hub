@@ -44,7 +44,7 @@ The skin automatically detects Tier 1 tournaments from Liquipedia, including:
 
 ### Method 1: Manual Installation
 
-1. **Download** the latest release from [Releases](https://github.com/Parsoulini/Dota2Hub/releases)
+1. **Download** the latest release from [Releases](https://github.com/Pasoulini/Dota2Hub/releases)
 2. **Extract** the ZIP file
 3. **Copy** the `Dota2Hub` folder to:
    ```
@@ -57,7 +57,7 @@ The skin automatically detects Tier 1 tournaments from Liquipedia, including:
 
 ```bash
 cd "C:\Users\<YourUsername>\Documents\Rainmeter\Skins\"
-git clone https://github.com/Parsoulini/Dota2Hub.git
+git clone https://github.com/Pasoulini/Dota2Hub.git
 ```
 
 Then refresh Rainmeter and load the skin.
@@ -286,7 +286,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Parsa Rasouli**
 
-- GitHub: [@Parsoulini](https://github.com/Parsoulini)
+- GitHub: [@Pasoulini](https://github.com/Pasoulini)
 
 ---
 
