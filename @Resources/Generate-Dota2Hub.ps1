@@ -699,6 +699,7 @@ $panelH = $completedY + ($displayCompleted.Count * ($cardHeight + $cardGap)) + 2
 
 $lines = New-Object System.Collections.Generic.List[string]
 $lines.Add("[Variables]")
+$lines.Add("FirstLoad=0")
 $lines.Add("LastUpdated=" + (SafeText $updated))
 $lines.Add("IconBlank=" + (SafeText $DefaultLogo))
 $lines.Add("PanelH=" + $panelH)

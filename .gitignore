@@ -9,8 +9,8 @@ Cache/last-run.txt
 Cache/logo_*.png
 Cache/blank.png
 
-# Generated data file
-Data.inc
+# Generated data file (updated by script, but default version is in repo)
+# Data.inc
 
 # Windows thumbs
 Thumbs.db
