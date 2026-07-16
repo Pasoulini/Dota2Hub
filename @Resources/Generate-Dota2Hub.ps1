@@ -228,7 +228,7 @@ function Find-TeamLogoUrl($teamName) {
     switch -Wildcard ($name) {
         "*Inner Circle*" { $searchTerms += @("Inner_Circle_2025", "Inner Circle 2025", "ICxI") }
         "*Nemesis*" { $searchTerms += @("Team_Nem_lightmode", "Team_Nem") }
-        "*Poor Rangers*" { $searchTerms += @("Power_Rangers", "Power Rangers", "Poor_Rangers") }
+        "*Poor Rangers*" { $searchTerms += @("Power_Rangers", "Power Rangers", "Poor_Rangers", "Arcade.PowerRangers") }
         "*BB Team*" { $searchTerms += @("BetBoom_Team", "BetBoom Team", "BB_Team", "BetBoom") }
         "*L1*" { $searchTerms += @("L1GA_TEAM", "L1GA TEAM", "L1_Team") }
         "*PTime*" { $searchTerms += @("PlayTime_allmode", "PlayTime") }
@@ -276,6 +276,10 @@ function Find-TeamLogoUrl($teamName) {
     }
     
     return $null
+}
+
+$FallbackLogos = @{
+    "Poor Rangers" = "https://liquipedia.net/commons/images/thumb/4/4c/Arcade.PowerRangers_std.png/100px-Arcade.PowerRangers_std.png"
 }
 
 function Download-Logo($teamName, $logoUrl) {
@@ -354,7 +358,7 @@ foreach ($matchStart in $matchStarts) {
     
     if ($blockHtml.Length -eq 0) { continue }
     
-    $teamPattern = 'class="block-team[^"]*"[^>]*>.*?title="([^"]+)"'
+    $teamPattern = 'class="block-team[^"]*">(.*?)</div>'
     $teamMatches = [regex]::Matches($blockHtml, $teamPattern, [System.Text.RegularExpressions.RegexOptions]::Singleline)
     
     $timestampPattern = 'data-timestamp="(\d+)"'
@@ -362,8 +366,16 @@ foreach ($matchStart in $matchStarts) {
     
     if ($teamMatches.Count -lt 2 -or -not $timestampMatch.Success) { continue }
     
-    $team1 = $teamMatches[0].Groups[1].Value
-    $team2 = $teamMatches[1].Groups[1].Value
+    function Extract-TeamName($block) {
+        $titleMatch = [regex]::Match($block, 'title="([^"]+)"')
+        if ($titleMatch.Success) { return $titleMatch.Groups[1].Value }
+        $nameMatch = [regex]::Match($block, 'class="name"[^>]*>([^<]+)<')
+        if ($nameMatch.Success) { return $nameMatch.Groups[1].Value }
+        return "TBD"
+    }
+    
+    $team1 = Extract-TeamName $teamMatches[0].Groups[1].Value
+    $team2 = Extract-TeamName $teamMatches[1].Groups[1].Value
     
     $ts = [long]$timestampMatch.Groups[1].Value
     $utcTime = [DateTimeOffset]::FromUnixTimeSeconds($ts).UtcDateTime
@@ -387,6 +399,8 @@ foreach ($matchStart in $matchStarts) {
     $bo = if ($boMatch.Success) { "BO$($boMatch.Groups[1].Value)" } else { "BO1" }
     
     if ($utcTime -lt $now) {
+        $hoursPast = ($now - $utcTime).TotalHours
+        
         if ($score1 -ne "" -and $score2 -ne "") {
             $s1 = [int]$score1
             $s2 = [int]$score2
@@ -401,9 +415,17 @@ foreach ($matchStart in $matchStarts) {
                 $isCompleted = ($s1 -ge 3 -or $s2 -ge 3)
             }
             
+            if (-not $isCompleted -and $hoursPast -ge 6) {
+                $isCompleted = $true
+            }
+            
             if (-not $isCompleted) { $isLive = $true }
         } else {
-            $isLive = $true
+            if ($hoursPast -ge 4) {
+                $isCompleted = $true
+            } else {
+                $isLive = $true
+            }
         }
     }
     
@@ -427,6 +449,16 @@ foreach ($matchStart in $matchStarts) {
         $allTournamentUrls += $tournamentUrl
     }
     
+    $timeDisplay = $matchTime.ToString("HH:mm")
+    if (-not $isCompleted -and -not $isLive) {
+        $today = (Get-Date).Date
+        $matchDate = $matchTime.Date
+        $daysUntil = ($matchDate - $today).Days
+        if ($daysUntil -ge 1) {
+            $timeDisplay = "${daysUntil}d $($matchTime.ToString('HH:mm'))"
+        }
+    }
+    
     $result = [PSCustomObject]@{
         Team1 = SafeText $team1
         Team2 = SafeText $team2
@@ -434,7 +466,7 @@ foreach ($matchStart in $matchStarts) {
         Score2 = $score2
         BO = $bo
         Tournament = $tournament
-        Time = if ($isLive -and $score1 -ne "" -and $score2 -ne "") { "$score1-$score2" } else { $matchTime.ToString("HH:mm") }
+        Time = if ($isLive -and $score1 -ne "" -and $score2 -ne "") { "$score1-$score2" } else { $timeDisplay }
         Status = if ($isCompleted) { "completed" } elseif ($isLive) { "live" } else { "upcoming" }
         Timestamp = $ts
         TournamentUrl = $tournamentUrl
@@ -489,6 +521,141 @@ $completedResults = $filteredCompleted
 
 Write-Output "Upcoming: $($upcomingResults.Count), Completed: $($completedResults.Count)"
 
+Write-Output "Checking for TBD teams and scraping tournament pages..."
+
+$tbdTournaments = @()
+foreach ($m in $upcomingResults) {
+    if (($m.Team1 -eq "TBD" -or $m.Team2 -eq "TBD") -and $m.TournamentUrl -and -not $tbdTournaments.Contains($m.TournamentUrl)) {
+        $tbdTournaments += $m.TournamentUrl
+    }
+}
+
+function Extract-BlockTeamName($block) {
+    $titleMatch = [regex]::Match($block, 'title="([^"]+)"')
+    if ($titleMatch.Success) { return $titleMatch.Groups[1].Value }
+    $nameMatch = [regex]::Match($block, 'class="name"[^>]*>([^<]+)<')
+    if ($nameMatch.Success) { return $nameMatch.Groups[1].Value }
+    return "TBD"
+}
+
+function Parse-TournamentPage($url) {
+    $pagePath = ($url -replace 'https://liquipedia.net/dota2/', '' -replace '#.*$', '')
+    $fragment = ""
+    if ($url -match '#(.+)$') { $fragment = $Matches[1] }
+    $baseUrl = "https://liquipedia.net/dota2/$pagePath"
+    
+    $tempFile = Join-Path $CacheDir "tournament_temp.html"
+    
+    & "C:\Windows\System32\curl.exe" -s -L --compressed -H "Api-User-Agent: Dota2Hub/1.0 (contact: your@email.com)" -o $tempFile $baseUrl
+    
+    if (-not (Test-Path $tempFile)) { return @() }
+    
+    $content = Get-Content $tempFile -Raw -Encoding UTF8
+    if ($content.Length -lt 1000) { Remove-Item $tempFile -Force; return @() }
+    
+    Remove-Item $tempFile -Force
+    
+    if ($fragment) {
+        $sectionStart = $content.IndexOf("id=`"$fragment`"")
+        if ($sectionStart -gt 0) {
+            $nextSection = $content.Substring($sectionStart + 100).IndexOf('id="')
+            if ($nextSection -gt 0) {
+                $content = $content.Substring($sectionStart, $nextSection)
+            } else {
+                $content = $content.Substring($sectionStart)
+            }
+        }
+    }
+    
+    $matchInfoPattern = '<div class="match-info'
+    $matchStarts = [regex]::Matches($content, $matchInfoPattern)
+    
+    $results = @()
+    
+    foreach ($matchStart in $matchStarts) {
+        $startIdx = $matchStart.Index
+        $depth = 1
+        $pos = $startIdx + $matchInfoPattern.Length
+        $blockHtml = ""
+        
+        while ($depth -gt 0 -and $pos -lt $content.Length) {
+            $openIdx = $content.IndexOf('<div', $pos)
+            $closeIdx = $content.IndexOf('</div>', $pos)
+            if ($closeIdx -eq -1) { break }
+            if ($openIdx -ne -1 -and $openIdx -lt $closeIdx) {
+                $depth++
+                $pos = $openIdx + 4
+            } else {
+                $depth--
+                if ($depth -eq 0) {
+                    $blockHtml = $content.Substring($startIdx, $closeIdx + 6 - $startIdx)
+                    break
+                }
+                $pos = $closeIdx + 6
+            }
+        }
+        
+        if ($blockHtml.Length -eq 0) { continue }
+        
+        $teamPattern = 'class="block-team[^"]*">(.*?)</div>'
+        $teamMatches = [regex]::Matches($blockHtml, $teamPattern, [System.Text.RegularExpressions.RegexOptions]::Singleline)
+        
+        if ($teamMatches.Count -lt 2) { continue }
+        
+        $t1 = Extract-BlockTeamName $teamMatches[0].Groups[1].Value
+        $t2 = Extract-BlockTeamName $teamMatches[1].Groups[1].Value
+        
+        if ($t1 -ne "???" -and $t2 -ne "???" -and ($t1 -ne "TBD" -or $t2 -ne "TBD")) {
+            $pair = if ($t1 -lt $t2) { "${t1}_vs_${t2}" } else { "${t2}_vs_${t1}" }
+            $isDupe = $false
+            foreach ($r in $results) {
+                $rp = if ($r.Team1 -lt $r.Team2) { "$($r.Team1)_vs_$($r.Team2)" } else { "$($r.Team2)_vs_$($r.Team1)" }
+                if ($pair -eq $rp) { $isDupe = $true; break }
+            }
+            if (-not $isDupe) {
+                $results += [PSCustomObject]@{ Team1 = $t1; Team2 = $t2 }
+            }
+        }
+    }
+    
+    return $results
+}
+
+foreach ($tUrl in $tbdTournaments) {
+    Write-Output "  Scraping tournament page for: $tUrl"
+    $bracketData = Parse-TournamentPage $tUrl
+    Write-Output "    Found $($bracketData.Count) matchups from tournament page"
+    
+    $bracketIdx = 0
+    for ($i = 0; $i -lt $upcomingResults.Count; $i++) {
+        $m = $upcomingResults[$i]
+        if ($m.TournamentUrl -ne $tUrl) { continue }
+        if ($m.Team1 -ne "TBD" -and $m.Team2 -ne "TBD") { continue }
+        if ($bracketIdx -ge $bracketData.Count) { break }
+        
+        $lookup = $bracketData[$bracketIdx]
+        if ($lookup.Team1 -ne "TBD") { $upcomingResults[$i].Team1 = $lookup.Team1 }
+        if ($lookup.Team2 -ne "TBD") { $upcomingResults[$i].Team2 = $lookup.Team2 }
+        Write-Output "    Matched: $($lookup.Team1) vs $($lookup.Team2)"
+        $bracketIdx++
+    }
+}
+
+Write-Output "Deduplicating upcoming matches..."
+$dedupedUpcoming = @()
+$seenMatches = @{}
+foreach ($m in ($upcomingResults | Sort-Object Timestamp)) {
+    $t1 = $m.Team1.Trim()
+    $t2 = $m.Team2.Trim()
+    $pair = if ($t1 -lt $t2) { "${t1}_vs_${t2}" } else { "${t2}_vs_${t1}" }
+    if (-not $seenMatches.ContainsKey($pair)) {
+        $seenMatches[$pair] = $true
+        $dedupedUpcoming += $m
+    }
+}
+$upcomingResults = $dedupedUpcoming
+Write-Output "After dedup: $($upcomingResults.Count) upcoming matches"
+
 $displayUpcoming = $upcomingResults | Sort-Object Timestamp | Select-Object -First 8
 $displayCompleted = $completedResults | Sort-Object Timestamp -Descending | Select-Object -First 8
 
@@ -501,6 +668,9 @@ foreach ($match in ($displayUpcoming + $displayCompleted)) {
         $trimmedName = $teamName.Trim()
         if (-not $logoCache.ContainsKey($trimmedName)) {
             $logoUrl = Find-TeamLogoUrl $trimmedName
+            if (-not $logoUrl -and $FallbackLogos.ContainsKey($trimmedName)) {
+                $logoUrl = $FallbackLogos[$trimmedName]
+            }
             if ($logoUrl) {
                 $logoFile = Download-Logo $trimmedName $logoUrl
                 if ($logoFile -eq $DefaultLogo) {

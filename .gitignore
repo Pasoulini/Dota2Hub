@@ -1,8 +1,11 @@
 # Cache files (generated at runtime)
 Cache/matches_page.html
 Cache/portal_tournaments.html
+Cache/tournament_*.html
 Cache/tier_cache.json
 Cache/tier_last_update.txt
+Cache/tier1_leagues.txt
+Cache/last-run.txt
 Cache/logo_*.png
 Cache/blank.png
 
