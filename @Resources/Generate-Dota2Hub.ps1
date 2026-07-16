@@ -776,7 +776,8 @@ if ($RefreshRainmeter) {
     Start-Sleep -Milliseconds 500
     $rainmeterExe = "C:\Program Files\Rainmeter\Rainmeter.exe"
     if (Test-Path $rainmeterExe) {
-        & $rainmeterExe "!Refresh" "Dota2Hub"
+        $skinFolder = Split-Path (Split-Path $PSScriptRoot -Parent) -Leaf
+        & $rainmeterExe "!Refresh" $skinFolder
     }
 }
 
