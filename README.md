@@ -13,7 +13,8 @@ A live Dota 2 Tier 1 scoreboard for [Rainmeter](https://www.rainmeter.net/), dis
 - **Auto-Refresh** - Updates every 5 minutes automatically
 - **Team Logos** - Displays official team logos from Liquipedia
 - **Score Display** - Shows current scores for completed and live matches
-- **Scaling** - Supports different monitor resolutions
+- **Dynamic Scaling** - Fully dynamic layout, supports 1080p, 1440p, and 4K
+- **Dynamic Timezone** - Automatically detects system timezone
 - **Dark Theme** - Beautiful dark theme designed for Dota 2 fans
 
 ---
@@ -87,7 +88,7 @@ Then refresh Rainmeter and load the skin.
 
 ### Scaling (Resize)
 
-The skin supports scaling for different monitor resolutions. Edit `Dota2Hub.ini` and change the `Scale` variable:
+All dimensions (fonts, logos, cards, positions) are fully dynamic and scale together. Edit `Dota2Hub.ini` and change the `Scale` variable:
 
 ```ini
 [Variables]
@@ -198,8 +199,7 @@ Dota2Hub/
     ├── matches_page.html     ; Cached matches page
     ├── portal_tournaments.html ; Cached tournaments page
     ├── tier1_leagues.txt     ; Tier 1 tournament list
-    ├── tier_cache.json       ; Tier cache
-    ├── tier_last_update.txt  ; Last update timestamp
+    ├── last-run.txt          ; Auto-refresh timestamp
     └── logo_*.png            ; Downloaded team logos
 ```
 
@@ -221,10 +221,13 @@ Dota2Hub/
 
 ### Wrong Time Display
 
-The skin shows times in **IRST (Iran Standard Time, UTC+3:30)**:
+The skin automatically detects your system timezone. All times are shown in your local time.
 
-- CEST (UTC+2) → IRST = CEST + 1:30
-- CET (UTC+1) → IRST = CET + 2:30
+- Upcoming matches today: `HH:mm` (e.g., `18:30`)
+- Upcoming matches tomorrow+: `Xd HH:mm` (e.g., `1d 18:30`)
+
+If times are wrong, ensure your Windows timezone is set correctly:
+**Settings → Time & Language → Date & Time → Time zone**
 
 ### Rate Limiting
 
