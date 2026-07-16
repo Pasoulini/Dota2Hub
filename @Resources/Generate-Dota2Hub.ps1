@@ -318,7 +318,8 @@ Write-Output "Known Tier 1 leagues: $($knownTier1.Count)"
 Write-Output "Parsing matches from HTML..."
 
 $now = [DateTime]::UtcNow
-$iranOffset = [TimeSpan]::FromHours(3).Add([TimeSpan]::FromMinutes(30))
+$localTz = [System.TimeZoneInfo]::Local
+$localOffset = $localTz.GetUtcOffset($now)
 
 $upcomingResults = @()
 $completedResults = @()
@@ -379,7 +380,7 @@ foreach ($matchStart in $matchStarts) {
     
     $ts = [long]$timestampMatch.Groups[1].Value
     $utcTime = [DateTimeOffset]::FromUnixTimeSeconds($ts).UtcDateTime
-    $matchTime = $utcTime.Add($iranOffset)
+    $matchTime = $utcTime.Add($localOffset)
     
     $isCompleted = $false
     $isLive = $false
