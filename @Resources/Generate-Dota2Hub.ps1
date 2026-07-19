@@ -657,8 +657,8 @@ foreach ($m in ($upcomingResults | Sort-Object Timestamp)) {
 $upcomingResults = $dedupedUpcoming
 Write-Output "After dedup: $($upcomingResults.Count) upcoming matches"
 
-$displayUpcoming = $upcomingResults | Sort-Object Timestamp | Select-Object -First 8
-$displayCompleted = $completedResults | Sort-Object Timestamp -Descending | Select-Object -First 8
+$displayUpcoming = @($upcomingResults | Sort-Object Timestamp | Select-Object -First 8)
+$displayCompleted = @($completedResults | Sort-Object Timestamp -Descending | Select-Object -First 8)
 
 Write-Output "Matching team logos from scraped data..."
 
@@ -699,7 +699,6 @@ $panelH = $completedY + ($displayCompleted.Count * ($cardHeight + $cardGap)) + 2
 
 $lines = New-Object System.Collections.Generic.List[string]
 $lines.Add("[Variables]")
-$lines.Add("FirstLoad=0")
 $lines.Add("LastUpdated=" + (SafeText $updated))
 $lines.Add("IconBlank=" + (SafeText $DefaultLogo))
 $lines.Add("PanelH=" + $panelH)
